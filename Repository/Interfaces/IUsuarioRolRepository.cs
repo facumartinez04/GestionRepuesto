@@ -1,0 +1,12 @@
+﻿using GestionRepuestoAPI.Modelos;
+
+namespace GestionRepuestoAPI.Repository.Interfaces
+{
+    public interface IUsuarioRolRepository
+    {
+        ICollection<UsuarioRol> ObtenerRolesDeUsuario(int usuarioId);
+        bool AsignarRol(int usuarioId, int rolId);
+        bool RemoverRol(int usuarioId, int rolId);
+        bool GuardarCambios();
+    }
+}
