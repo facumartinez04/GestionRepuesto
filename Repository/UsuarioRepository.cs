@@ -29,9 +29,9 @@ namespace GestionRepuestoAPI.Repository
         {
             if (usuario == null) return false;
 
+
             usuario.clave = SeguridadHelper.HashPassword(usuario.clave);
 
-            _dbContext.Usuarios.Update(usuario);
             return GuardarCambios();
         }
 
@@ -76,6 +76,16 @@ namespace GestionRepuestoAPI.Repository
         public bool GuardarCambios()
         {
             return _dbContext.SaveChanges() >= 0;
+        }
+
+        public bool EditarRefreshToken(int id, string refreshToken, DateTime fechaExpiracion)
+        {
+            var usuario = ObtenerUsuario(id);
+            if (usuario == null) return false;
+            usuario.RefreshToken = refreshToken;
+            usuario.RefreshTokenExpiryTime = fechaExpiracion;
+            _dbContext.Usuarios.Update(usuario);
+            return GuardarCambios();
         }
     }
 }

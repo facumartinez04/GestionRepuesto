@@ -2,11 +2,13 @@
 using GestionRepuestoAPI.Modelos;
 using GestionRepuestoAPI.Modelos.Dtos;
 using GestionRepuestoAPI.Repository.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
 namespace GestionRepuestoAPI.Controllers
 {
+    [Authorize(Roles = "Administrador")]
     [Route("api/[controller]")]
     [ApiController]
     public class PermisoController : ControllerBase
@@ -27,7 +29,10 @@ namespace GestionRepuestoAPI.Controllers
         {
             var lista = _permisoRepository.ObtenerPermisos();
             var dto = _mapper.Map<List<PermisoLeerDto>>(lista);
+
             _respuestaAPI.Result = dto;
+            _respuestaAPI.StatusCode = HttpStatusCode.OK;
+
             return Ok(_respuestaAPI);
         }
 
@@ -45,36 +50,65 @@ namespace GestionRepuestoAPI.Controllers
 
             var dto = _mapper.Map<PermisoLeerDto>(permiso);
             _respuestaAPI.Result = dto;
+            _respuestaAPI.StatusCode = HttpStatusCode.OK;
+
             return Ok(_respuestaAPI);
         }
 
         [HttpPost]
         public IActionResult CrearPermiso([FromBody] PermisoCrearDto permisoDto)
         {
+            if (permisoDto == null)
+            {
+                _respuestaAPI.Success = false;
+                _respuestaAPI.StatusCode = HttpStatusCode.BadRequest;
+                _respuestaAPI.Message = "Datos inválidos.";
+                return BadRequest(_respuestaAPI);
+            }
+
             var permiso = _mapper.Map<Permiso>(permisoDto);
             _permisoRepository.CrearPermiso(permiso);
             var dto = _mapper.Map<PermisoLeerDto>(permiso);
-            return CreatedAtRoute("ObtenerPermiso", new { id = dto.id }, dto);
+
+            _respuestaAPI.Result = dto;
+            _respuestaAPI.StatusCode = HttpStatusCode.Created;
+
+            return CreatedAtRoute("ObtenerPermiso", new { id = dto.id }, _respuestaAPI);
         }
 
         [HttpPut("{id}")]
         public IActionResult ActualizarPermiso(int id, [FromBody] PermisoCrearDto permisoDto)
         {
             var permiso = _permisoRepository.ObtenerPermiso(id);
-            if (permiso == null) return NotFound();
+            if (permiso == null)
+            {
+                _respuestaAPI.Success = false;
+                _respuestaAPI.StatusCode = HttpStatusCode.NotFound;
+                _respuestaAPI.Message = "Permiso no encontrado.";
+                return NotFound(_respuestaAPI);
+            }
 
             _mapper.Map(permisoDto, permiso);
             _permisoRepository.ActualizarPermiso(permiso);
-            return NoContent();
+
+            _respuestaAPI.StatusCode = HttpStatusCode.NoContent;
+            return Ok(_respuestaAPI);
         }
 
         [HttpDelete("{id}")]
         public IActionResult EliminarPermiso(int id)
         {
             var eliminado = _permisoRepository.EliminarPermiso(id);
-            if (!eliminado) return NotFound();
+            if (!eliminado)
+            {
+                _respuestaAPI.Success = false;
+                _respuestaAPI.StatusCode = HttpStatusCode.NotFound;
+                _respuestaAPI.Message = "No se encontró el permiso a eliminar.";
+                return NotFound(_respuestaAPI);
+            }
 
-            return NoContent();
+            _respuestaAPI.StatusCode = HttpStatusCode.NoContent;
+            return Ok(_respuestaAPI);
         }
     }
 }

@@ -2,22 +2,30 @@
 using GestionRepuestoAPI.Modelos;
 using GestionRepuestoAPI.Modelos.Dtos;
 using GestionRepuestoAPI.Repository.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 
 namespace GestionRepuestoAPI.Controllers
 {
+    [Authorize(Roles = "Administrador")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly IUsuarioPermisoRepository _usuarioPermisoRepository;
+        private readonly IUsuarioRolRepository _usuarioRolRepository;
+
         private readonly IMapper _mapper;
         protected RespuestaAPI _respuestaAPI;
 
-        public UsuarioController(IUsuarioRepository usuarioRepository, IMapper mapper)
+        public UsuarioController(IUsuarioRepository usuarioRepository,IUsuarioRolRepository usuarioRolRepository, IUsuarioPermisoRepository usuarioPermisoRepository, IMapper mapper)
         {
+            _usuarioPermisoRepository = usuarioPermisoRepository;
+            _usuarioRolRepository = usuarioRolRepository;
             _usuarioRepository = usuarioRepository;
             _mapper = mapper;
             _respuestaAPI = new RespuestaAPI();
@@ -64,11 +72,11 @@ namespace GestionRepuestoAPI.Controllers
                 return BadRequest(_respuestaAPI);
             }
 
-            if (_usuarioRepository.ExisteUsuario(usuarioCrearDto.email))
+            if (_usuarioRepository.ExisteUsuario(usuarioCrearDto.nombreUsuario))
             {
                 _respuestaAPI.Success = false;
                 _respuestaAPI.StatusCode = HttpStatusCode.BadRequest;
-                _respuestaAPI.Message = "El email ya está registrado.";
+                _respuestaAPI.Message = "El usuario ya está registrado.";
                 return BadRequest(_respuestaAPI);
             }
 
@@ -89,7 +97,7 @@ namespace GestionRepuestoAPI.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public IActionResult ActualizarUsuario(int id, [FromBody] UsuarioCrearDto usuarioDto)
+        public IActionResult ActualizarUsuario(int id, [FromBody] UsuarioEditarDto usuarioDto)
         {
             if (usuarioDto == null || id <= 0)
             {
@@ -99,7 +107,8 @@ namespace GestionRepuestoAPI.Controllers
                 return BadRequest(_respuestaAPI);
             }
 
-            if (!_usuarioRepository.ExisteUsuario(id))
+            var usuarioExistente = _usuarioRepository.ObtenerUsuario(id);
+            if (usuarioExistente == null)
             {
                 _respuestaAPI.Success = false;
                 _respuestaAPI.StatusCode = HttpStatusCode.NotFound;
@@ -107,10 +116,38 @@ namespace GestionRepuestoAPI.Controllers
                 return NotFound(_respuestaAPI);
             }
 
-            var usuario = _mapper.Map<Usuario>(usuarioDto);
-            usuario.id = id;
+            if (string.IsNullOrWhiteSpace(usuarioDto.clave))
+            {
+                usuarioDto.clave = usuarioExistente.clave;
+            }
 
-            if (!_usuarioRepository.ActualizarUsuario(usuario))
+            
+
+            _mapper.Map(usuarioDto, usuarioExistente);
+
+
+            _usuarioRolRepository.ObtenerRolesDeUsuario(id)
+                .ToList()
+                .ForEach(ur => _usuarioRolRepository.RemoverRol(usuarioDto.id,ur.idRol));
+
+            if (usuarioDto.usuarioRols != null && usuarioDto.usuarioRols.Any())
+            {
+                foreach (var rol in usuarioDto.usuarioRols)
+                {
+                    if (!_usuarioRolRepository.AsignarRol(usuarioExistente.id, rol.idRol))
+                    {
+                        continue;
+                        
+                    }
+                }
+
+            }
+
+
+
+
+
+                if (!_usuarioRepository.GuardarCambios())
             {
                 _respuestaAPI.Success = false;
                 _respuestaAPI.StatusCode = HttpStatusCode.InternalServerError;

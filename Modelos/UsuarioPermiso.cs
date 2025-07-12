@@ -9,7 +9,6 @@ namespace GestionRepuestoAPI.Modelos
         public int idPermiso { get; set; }
 
         [NotMapped]
-
         public Usuario Usuario { get; set; }
         [NotMapped]
 

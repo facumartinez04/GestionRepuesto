@@ -1,11 +1,16 @@
-﻿namespace GestionRepuestoAPI.Modelos
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace GestionRepuestoAPI.Modelos
 {
     public class Usuario
     {
         public int id { get; set; }
+
+        [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         public string nombreUsuario { get; set; }
 
         public string clave { get; set; }
+
 
         public string email { get; set; }
 
@@ -14,8 +19,8 @@
         public DateTime RefreshTokenExpiryTime { get; set; } = DateTime.MinValue;
 
 
-        public ICollection<UsuarioPermiso> usuarioPermisos { get; set; }
-        public ICollection<UsuarioRol> usuarioRols { get; set; }
+        public ICollection<UsuarioPermiso>? usuarioPermisos { get; set; }
+        public ICollection<UsuarioRol>? usuarioRols { get; set; }
 
 
         public Usuario()

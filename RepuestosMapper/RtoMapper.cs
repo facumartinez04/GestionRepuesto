@@ -12,6 +12,9 @@ namespace GestionRepuestoAPI.RepuestosMapper
 
             CreateMap<Usuario, UsuarioCrearDto>().ReverseMap();
             CreateMap<Usuario, UsuarioLeerDto>().ReverseMap();
+            CreateMap<Usuario, UsuarioEditarDto>().ReverseMap();
+            CreateMap<Usuario, RefreshTokenDto>().ReverseMap();
+
 
             CreateMap<Usuario, LoginRespuestaDto>()
                 .ForMember(dest => dest.Usuario, opt => opt.MapFrom(src => src.nombreUsuario));
@@ -29,6 +32,7 @@ namespace GestionRepuestoAPI.RepuestosMapper
             CreateMap<Rol, Rol>(); 
 
             CreateMap<Permiso, Permiso>();
+
 
             CreateMap<Permiso, PermisoCrearDto>().ReverseMap();
             CreateMap<Permiso, PermisoLeerDto>().ReverseMap();

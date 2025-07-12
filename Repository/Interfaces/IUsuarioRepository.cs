@@ -7,6 +7,8 @@ namespace GestionRepuestoAPI.Repository.Interfaces
         ICollection<Usuario> ObtenerUsuarios();
         Usuario ObtenerUsuario(int id);
         Usuario ObtenerUsuario(string nombreUsuario);
+
+        bool EditarRefreshToken(int id, string refreshToken, DateTime fechaExpiracion);
         bool ExisteUsuario(int id);
         bool ExisteUsuario(string nombreUsuario);
         bool CrearUsuario(Usuario usuario);
