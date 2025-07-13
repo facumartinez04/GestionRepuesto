@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using GestionRepuestoAPI.Helpers;
 using GestionRepuestoAPI.Modelos;
 using GestionRepuestoAPI.Modelos.Dtos;
 using GestionRepuestoAPI.Repository.Interfaces;
@@ -110,14 +111,7 @@ namespace GestionRepuestoAPI.Controllers
             var username = User.Identity?.Name;
 
 
-            if (usuarioDto.nombreUsuario == username)
-            {
-                _respuestaAPI.Success = false;
-                _respuestaAPI.StatusCode = HttpStatusCode.BadRequest;
-                _respuestaAPI.Message = "No podes autoeditarte.";
-                return BadRequest(_respuestaAPI);
-            }
-
+         
 
             var usuarioExistente = _usuarioRepository.ObtenerUsuario(id);
             if (usuarioExistente == null)
@@ -130,9 +124,24 @@ namespace GestionRepuestoAPI.Controllers
 
 
 
+
+            if (usuarioDto.nombreUsuario == username && SeguridadHelper.VerificarPassword(usuarioDto.clave, usuarioExistente.clave) == true)
+            {
+                _respuestaAPI.Success = false;
+                _respuestaAPI.StatusCode = HttpStatusCode.BadRequest;
+                _respuestaAPI.Message = "No podes autoeditarte.";
+                return BadRequest(_respuestaAPI);
+            }
+
+
             if (string.IsNullOrWhiteSpace(usuarioDto.clave))
             {
                 usuarioDto.clave = usuarioExistente.clave;
+            }
+
+            else
+            {
+                usuarioDto.clave = BCrypt.Net.BCrypt.HashPassword(usuarioDto.clave);
             }
 
             _mapper.Map(usuarioDto, usuarioExistente);
@@ -199,6 +208,20 @@ namespace GestionRepuestoAPI.Controllers
                 _respuestaAPI.StatusCode = HttpStatusCode.NotFound;
                 _respuestaAPI.Message = "Usuario no encontrado.";
                 return NotFound(_respuestaAPI);
+            }
+
+
+            var username = User.Identity?.Name;
+
+            var usuarioget = _usuarioRepository.ObtenerUsuario(id);
+
+
+            if (usuarioget.nombreUsuario == username)
+            {
+                _respuestaAPI.Success = false;
+                _respuestaAPI.StatusCode = HttpStatusCode.BadRequest;
+                _respuestaAPI.Message = "No podes autoeliminarte.";
+                return BadRequest(_respuestaAPI);
             }
 
             if (!_usuarioRepository.EliminarUsuario(id))
