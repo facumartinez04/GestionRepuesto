@@ -73,5 +73,13 @@ namespace GestionRepuestoAPI.Repository
         {
             return _dbContext.SaveChanges() >= 0;
         }
+
+        public ICollection<UsuarioRol> ObtenerUsuariosPorRol(int rolId)
+        {
+            return _dbContext.UsuariosRoles
+                .AsNoTracking()
+                .Where(ur => ur.idRol == rolId)
+                .ToList();
+        }
     }
 }

@@ -14,12 +14,14 @@ namespace GestionRepuestoAPI.Controllers
         private readonly IRolRepository _rolRepository;
         private readonly IRolPermisoRepository _rolPermisoRepository;
         private readonly IPermisoRepository _permisoRepository;
+        private readonly IUsuarioRolRepository _usuarioRolRepository;
 
         private readonly IMapper _mapper;
         private readonly RespuestaAPI _respuesta;
 
-        public RolController(IRolRepository rolRepository,IRolPermisoRepository rolPermisoRepository, IPermisoRepository permisoRepository, IMapper mapper)
+        public RolController(IRolRepository rolRepository,IRolPermisoRepository rolPermisoRepository, IUsuarioRolRepository usuarioRolRepository, IPermisoRepository permisoRepository, IMapper mapper)
         {
+            _usuarioRolRepository = usuarioRolRepository;
             _permisoRepository = permisoRepository;
             _rolPermisoRepository = rolPermisoRepository;
 
@@ -139,6 +141,13 @@ namespace GestionRepuestoAPI.Controllers
         [HttpDelete("{id:int}")]
         public IActionResult Eliminar(int id)
         {
+            if (_usuarioRolRepository.ObtenerUsuariosPorRol(id).Any())
+            {
+                _respuesta.Success = false;
+                _respuesta.Message = "No se puede eliminar el rol porque tiene usuarios asignados.";
+                _respuesta.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(_respuesta);
+            }
             if (!_rolRepository.ExisteRol(id)) return NotFound();
 
             _rolRepository.EliminarRol(id);
