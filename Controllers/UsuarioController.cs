@@ -10,7 +10,7 @@ using System.Net;
 
 namespace GestionRepuestoAPI.Controllers
 {
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = "ModuloUsuarios")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuarioController : ControllerBase
@@ -107,6 +107,18 @@ namespace GestionRepuestoAPI.Controllers
                 return BadRequest(_respuestaAPI);
             }
 
+            var username = User.Identity?.Name;
+
+
+            if (usuarioDto.nombreUsuario == username)
+            {
+                _respuestaAPI.Success = false;
+                _respuestaAPI.StatusCode = HttpStatusCode.BadRequest;
+                _respuestaAPI.Message = "No podes autoeditarte.";
+                return BadRequest(_respuestaAPI);
+            }
+
+
             var usuarioExistente = _usuarioRepository.ObtenerUsuario(id);
             if (usuarioExistente == null)
             {
@@ -116,38 +128,53 @@ namespace GestionRepuestoAPI.Controllers
                 return NotFound(_respuestaAPI);
             }
 
+
+
             if (string.IsNullOrWhiteSpace(usuarioDto.clave))
             {
                 usuarioDto.clave = usuarioExistente.clave;
             }
 
-            
-
             _mapper.Map(usuarioDto, usuarioExistente);
 
 
-            _usuarioRolRepository.ObtenerRolesDeUsuario(id)
-                .ToList()
-                .ForEach(ur => _usuarioRolRepository.RemoverRol(usuarioDto.id,ur.idRol));
+            _usuarioRolRepository.RemoverTodosLosRoles(id);
+
+            _usuarioPermisoRepository.RemoverTodosLosPermisos(id);
+
+
+            _usuarioRolRepository.GuardarCambios();
+            _usuarioPermisoRepository.GuardarCambios();
+
+
 
             if (usuarioDto.usuarioRols != null && usuarioDto.usuarioRols.Any())
             {
                 foreach (var rol in usuarioDto.usuarioRols)
                 {
-                    if (!_usuarioRolRepository.AsignarRol(usuarioExistente.id, rol.idRol))
-                    {
-                        continue;
-                        
-                    }
+
+
+                    _usuarioRolRepository.AsignarRol(usuarioExistente.id, rol.idRol);
                 }
 
+
+
+            }
+
+      
+
+            if (usuarioDto.usuarioPermisos != null && usuarioDto.usuarioPermisos.Any())
+            {
+
+                foreach (var permiso in usuarioDto.usuarioPermisos)
+                {
+                    _usuarioPermisoRepository.AsignarPermiso(usuarioExistente.id, permiso.idPermiso);
+                }
             }
 
 
 
-
-
-                if (!_usuarioRepository.GuardarCambios())
+            if (!_usuarioRepository.GuardarCambios())
             {
                 _respuestaAPI.Success = false;
                 _respuestaAPI.StatusCode = HttpStatusCode.InternalServerError;
@@ -159,6 +186,9 @@ namespace GestionRepuestoAPI.Controllers
             _respuestaAPI.Message = "Usuario actualizado correctamente.";
             return Ok(_respuestaAPI);
         }
+
+
+
 
         [HttpDelete("{id:int}")]
         public IActionResult EliminarUsuario(int id)

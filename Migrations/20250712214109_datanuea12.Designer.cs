@@ -4,6 +4,7 @@ using GestionRepuestoAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestionRepuestoAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250712214109_datanuea12")]
+    partial class datanuea12
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,19 +100,6 @@ namespace GestionRepuestoAPI.Migrations
                     b.HasKey("id");
 
                     b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("GestionRepuestoAPI.Modelos.RolPermiso", b =>
-                {
-                    b.Property<int>("idRol")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idPermiso")
-                        .HasColumnType("int");
-
-                    b.HasKey("idRol", "idPermiso");
-
-                    b.ToTable("RolesPermisos");
                 });
 
             modelBuilder.Entity("GestionRepuestoAPI.Modelos.Usuario", b =>

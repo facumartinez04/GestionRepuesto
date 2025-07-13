@@ -17,20 +17,36 @@ namespace GestionRepuestoAPI.Repository
         public ICollection<UsuarioRol> ObtenerRolesDeUsuario(int usuarioId)
         {
             return _dbContext.UsuariosRoles
+                .AsNoTracking() 
                 .Where(ur => ur.idUsuario == usuarioId)
                 .ToList();
         }
 
+        public void RemoverTodosLosRoles(int usuarioId)
+        {
+            var roles = _dbContext.UsuariosRoles
+                .AsNoTracking()
+                .Where(ur => ur.idUsuario == usuarioId)
+                .ToList();
+
+            _dbContext.UsuariosRoles.RemoveRange(roles);
+        }
 
         public bool AsignarRol(int usuarioId, int rolId)
         {
-            if (!_dbContext.Roles.Any(r => r.id == rolId))
+            bool yaTrackeado = _dbContext.ChangeTracker.Entries<UsuarioRol>()
+                .Any(e => e.Entity.idUsuario == usuarioId && e.Entity.idRol == rolId);
+
+            if (yaTrackeado)
                 return false;
 
-            var yaAsignado = _dbContext.UsuariosRoles
+            bool yaExiste = _dbContext.UsuariosRoles
+                .AsNoTracking()
                 .Any(ur => ur.idUsuario == usuarioId && ur.idRol == rolId);
 
-            if (yaAsignado) return false;
+            if (yaExiste)
+                return false;
+
 
             var usuarioRol = new UsuarioRol
             {
@@ -39,9 +55,8 @@ namespace GestionRepuestoAPI.Repository
             };
 
             _dbContext.UsuariosRoles.Add(usuarioRol);
-            return GuardarCambios();
+            return true;
         }
-
 
         public bool RemoverRol(int usuarioId, int rolId)
         {
@@ -51,7 +66,7 @@ namespace GestionRepuestoAPI.Repository
             if (usuarioRol == null) return false;
 
             _dbContext.UsuariosRoles.Remove(usuarioRol);
-            return GuardarCambios();
+            return true;
         }
 
         public bool GuardarCambios()

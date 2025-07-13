@@ -21,8 +21,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 
 
@@ -32,6 +32,7 @@ builder.Services.AddScoped<IUsuarioPermisoRepository, UsuarioPermisoRepository>(
 builder.Services.AddScoped<IUsuarioRolRepository, UsuarioRolRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IPermisoRepository, PermisoRepository>();
+builder.Services.AddScoped<IRolPermisoRepository, RolPermisoRepository>();
 
 builder.Services.AddAutoMapper(typeof(RtoMapper));
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -62,7 +63,61 @@ builder.Services.AddCors(options =>
                           .AllowAnyHeader());
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("EsAdministrador", policy =>
+     policy.RequireRole("Administrador"));
 
+    options.AddPolicy("CrearRepuesto", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "repuesto.crear")));
+
+    options.AddPolicy("EditarRepuesto", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "repuesto.editar")));
+
+    options.AddPolicy("ListarRepuesto", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "repuesto.listar")));
+
+    options.AddPolicy("EliminarRepuesto", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "repuesto.eliminar")));
+
+    options.AddPolicy("ListarUsuario", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "usuario.listar")));
+
+    options.AddPolicy("CrearUsuario", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "usuario.crear")));
+
+    options.AddPolicy("EditarUsuario", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "usuario.editar")));
+
+    options.AddPolicy("EliminarUsuario", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Administrador") ||
+            context.User.HasClaim("Permiso", "usuario.eliminar")));
+
+    options.AddPolicy("ModuloUsuarios", policy =>
+     policy.RequireAssertion(context =>
+         context.User.IsInRole("Administrador") ||
+         context.User.HasClaim("Permiso", "usuario.modulo")));
+
+    options.AddPolicy("ModuloRoles", policy =>
+ policy.RequireAssertion(context =>
+     context.User.IsInRole("Administrador") ||
+     context.User.HasClaim("Permiso", "usuario.roles")));
+});
 
 
 

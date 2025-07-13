@@ -2,6 +2,7 @@
 using GestionRepuestoAPI.Modelos;
 using GestionRepuestoAPI.Modelos.Dtos;
 using GestionRepuestoAPI.Repository.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -23,6 +24,7 @@ namespace GestionRepuestoAPI.Controllers
             _respuestaAPI = new RespuestaAPI();
         }
 
+        [Authorize(Policy = "ListarRepuesto")]
         [HttpGet]
         public IActionResult ObtenerRepuestos()
         {
@@ -35,6 +37,7 @@ namespace GestionRepuestoAPI.Controllers
             return Ok(_respuestaAPI);
         }
 
+        [Authorize(Policy = "ListarRepuesto")]
         [HttpGet("{id:int}", Name = "ObtenerRepuesto")]
         public IActionResult ObtenerRepuesto(int id)
         {
@@ -54,6 +57,7 @@ namespace GestionRepuestoAPI.Controllers
             return Ok(_respuestaAPI);
         }
 
+        [Authorize(Policy = "CrearRepuesto")]
         [HttpPost]
         public IActionResult CrearRepuesto([FromBody] RepuestoCrearDto repuestoCrearDto)
         {
@@ -82,6 +86,7 @@ namespace GestionRepuestoAPI.Controllers
             return CreatedAtRoute("ObtenerRepuesto", new { id = repuesto.id }, _respuestaAPI);
         }
 
+        [Authorize(Policy = "EditarRepuesto")]
         [HttpPut("{id:int}")]
         public IActionResult ActualizarRepuesto(int id, [FromBody] RepuestoCrearDto repuestoActualizarDto)
         {
@@ -118,7 +123,7 @@ namespace GestionRepuestoAPI.Controllers
         }
 
 
-
+        [Authorize(Policy = "EliminarRepuesto")]
         [HttpDelete("{id:int}")]
         public IActionResult EliminarRepuesto(int id)
         {
@@ -144,6 +149,8 @@ namespace GestionRepuestoAPI.Controllers
             return Ok(_respuestaAPI);
         }
 
+
+        [Authorize(Policy = "EditarRepuesto")]
         [HttpPatch("actualizar-stock/{id:int}")]
         public IActionResult ActualizarStock(int id, [FromBody] int nuevoStock)
         {

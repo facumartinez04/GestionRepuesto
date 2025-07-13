@@ -12,11 +12,17 @@ namespace GestionRepuestoAPI.Controllers
     public class RolController : ControllerBase
     {
         private readonly IRolRepository _rolRepository;
+        private readonly IRolPermisoRepository _rolPermisoRepository;
+        private readonly IPermisoRepository _permisoRepository;
+
         private readonly IMapper _mapper;
         private readonly RespuestaAPI _respuesta;
 
-        public RolController(IRolRepository rolRepository, IMapper mapper)
+        public RolController(IRolRepository rolRepository,IRolPermisoRepository rolPermisoRepository, IPermisoRepository permisoRepository, IMapper mapper)
         {
+            _permisoRepository = permisoRepository;
+            _rolPermisoRepository = rolPermisoRepository;
+
             _rolRepository = rolRepository;
             _mapper = mapper;
             _respuesta = new RespuestaAPI();
@@ -47,6 +53,23 @@ namespace GestionRepuestoAPI.Controllers
         {
             if (dto == null) return BadRequest();
 
+            if (string.IsNullOrWhiteSpace(dto.descripcion))
+            {
+                _respuesta.Success = false;
+                _respuesta.Message = "La descripción del rol es obligatoria.";
+                _respuesta.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(_respuesta);
+            }
+
+            if (_rolRepository.ObtenerRoles().ToList().Any(r => r.descripcion.Equals(dto.descripcion, StringComparison.OrdinalIgnoreCase)))
+            {
+                _respuesta.Success = false;
+                _respuesta.Message = "Ya existe un rol con esa descripción.";
+                _respuesta.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(_respuesta);
+            }
+
+
             var rol = _mapper.Map<Rol>(dto);
             _rolRepository.CrearRol(rol);
 
@@ -56,17 +79,62 @@ namespace GestionRepuestoAPI.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public IActionResult Actualizar(int id, [FromBody] RolDto dto)
+        public IActionResult Actualizar(int id, [FromBody] RolPermisoEditarDto dto)
         {
-            if (dto == null || id != dto.id) return BadRequest();
+            if (dto == null || id != dto.idRol)
+                return BadRequest();
 
-            if (!_rolRepository.ExisteRol(id)) return NotFound();
+            if (!_rolRepository.ExisteRol(id))
+                return NotFound();
 
-            var rol = _mapper.Map<Rol>(dto);
-            _rolRepository.ActualizarRol(rol);
-            _respuesta.StatusCode = HttpStatusCode.NoContent;
+            if (string.IsNullOrWhiteSpace(dto.descripcion))
+            {
+                _respuesta.Success = false;
+                _respuesta.Message = "La descripción del rol es obligatoria.";
+                _respuesta.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(_respuesta);
+            }
+
+            if (dto.listaPermisos != null && dto.listaPermisos.Count > 0)
+            {
+                foreach (var permiso in dto.listaPermisos)
+                {
+                    if (!_permisoRepository.ExistePermiso(permiso.idPermiso))
+                    {
+                        _respuesta.Success = false;
+                        _respuesta.Message = $"El permiso con ID {permiso.idPermiso} no existe.";
+                        _respuesta.StatusCode = HttpStatusCode.BadRequest;
+                        return BadRequest(_respuesta);
+                    }
+                }
+            }
+
+            var rolExistente = _rolRepository.ObtenerRol(id);
+            if (rolExistente == null)
+                return NotFound();
+
+            rolExistente.descripcion = dto.descripcion;
+
+            _rolPermisoRepository.RemoverTodosLosPermisosDelRol(id);
+            _rolPermisoRepository.GuardarCambios(); 
+
+            if (dto.listaPermisos != null && dto.listaPermisos.Count > 0)
+            {
+                foreach (var permiso in dto.listaPermisos)
+                {
+                    _rolPermisoRepository.AsignarPermisoARol(id, permiso.idPermiso);
+                }
+            }
+
+            _rolRepository.ActualizarRol(rolExistente);
+            _rolPermisoRepository.GuardarCambios();
+            _rolRepository.GuardarCambios();
+
+            _respuesta.StatusCode = HttpStatusCode.OK;
+            _respuesta.Message = "Rol actualizado correctamente con sus permisos exactos.";
             return Ok(_respuesta);
         }
+
 
         [HttpDelete("{id:int}")]
         public IActionResult Eliminar(int id)

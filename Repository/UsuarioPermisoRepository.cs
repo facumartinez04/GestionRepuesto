@@ -2,6 +2,8 @@
 using GestionRepuestoAPI.Modelos;
 using GestionRepuestoAPI.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GestionRepuestoAPI.Repository
 {
@@ -17,42 +19,60 @@ namespace GestionRepuestoAPI.Repository
         public ICollection<UsuarioPermiso> ObtenerPermisosDeUsuario(int usuarioId)
         {
             return _dbContext.UsuariosPermisos
+                .AsNoTracking()
                 .Where(up => up.idUsuario == usuarioId)
                 .ToList();
         }
 
-
-        public bool AsignarPermiso(int usuarioId, int permisoId)
+        public void RemoverTodosLosPermisos(int usuarioId)
         {
-            var existe = _dbContext.UsuariosPermisos
-                .Any(up => up.idUsuario == usuarioId && up.idPermiso == permisoId);
+            var permisos = _dbContext.UsuariosPermisos
+                .AsNoTracking() 
+                .Where(up => up.idUsuario == usuarioId)
+                .ToList();
 
-            if (existe) return false;
+            _dbContext.UsuariosPermisos.RemoveRange(permisos);
+        }
 
-            var usuarioPermiso = new UsuarioPermiso
+        public bool AsignarPermiso(int usuarioId, int idPermiso)
+        {
+            if (_dbContext.ChangeTracker.Entries<UsuarioPermiso>()
+                .Any(e => e.Entity.idUsuario == usuarioId && e.Entity.idPermiso == idPermiso))
+            {
+                return false;
+            }
+
+            if (_dbContext.UsuariosPermisos
+                .AsNoTracking()
+                .Any(up => up.idUsuario == usuarioId && up.idPermiso == idPermiso))
+            {
+                return false;
+            }
+
+            _dbContext.UsuariosPermisos.Add(new UsuarioPermiso
             {
                 idUsuario = usuarioId,
-                idPermiso = permisoId
-            };
+                idPermiso = idPermiso
+            });
 
-            _dbContext.UsuariosPermisos.Add(usuarioPermiso);
-            return GuardarCambios();
+            return true;
+        }
+
+        public bool GuardarCambios()
+        {
+            return _dbContext.SaveChanges() >= 0;
         }
 
         public bool RemoverPermiso(int usuarioId, int permisoId)
         {
             var usuarioPermiso = _dbContext.UsuariosPermisos
                 .FirstOrDefault(up => up.idUsuario == usuarioId && up.idPermiso == permisoId);
-
-            if (usuarioPermiso == null) return false;
-
+            if (usuarioPermiso == null)
+            {
+                return false;
+            }
             _dbContext.UsuariosPermisos.Remove(usuarioPermiso);
-            return GuardarCambios();
-        }
-
-        public bool GuardarCambios()
-        {
-            return _dbContext.SaveChanges() >= 0;
+            return true;
         }
     }
 }

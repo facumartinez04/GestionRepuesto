@@ -4,6 +4,7 @@ using GestionRepuestoAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestionRepuestoAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250712213854_datanuea")]
+    partial class datanuea
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,19 +102,6 @@ namespace GestionRepuestoAPI.Migrations
                     b.ToTable("Roles");
                 });
 
-            modelBuilder.Entity("GestionRepuestoAPI.Modelos.RolPermiso", b =>
-                {
-                    b.Property<int>("idRol")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idPermiso")
-                        .HasColumnType("int");
-
-                    b.HasKey("idRol", "idPermiso");
-
-                    b.ToTable("RolesPermisos");
-                });
-
             modelBuilder.Entity("GestionRepuestoAPI.Modelos.Usuario", b =>
                 {
                     b.Property<int>("id")
@@ -159,6 +149,8 @@ namespace GestionRepuestoAPI.Migrations
 
                     b.HasIndex("Usuarioid");
 
+                    b.HasIndex("idPermiso");
+
                     b.ToTable("UsuariosPermisos");
                 });
 
@@ -187,6 +179,22 @@ namespace GestionRepuestoAPI.Migrations
                     b.HasOne("GestionRepuestoAPI.Modelos.Usuario", null)
                         .WithMany("usuarioPermisos")
                         .HasForeignKey("Usuarioid");
+
+                    b.HasOne("GestionRepuestoAPI.Modelos.Permiso", "Permiso")
+                        .WithMany()
+                        .HasForeignKey("idPermiso")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GestionRepuestoAPI.Modelos.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("idUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permiso");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("GestionRepuestoAPI.Modelos.UsuarioRol", b =>

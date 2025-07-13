@@ -23,14 +23,17 @@ namespace GestionRepuestoAPI.Controllers
         private readonly IRolRepository _rolRepository;
 
         private readonly IPermisoRepository _permisoRepository;
+        private readonly IRolPermisoRepository _rolpermisoRepository;
+
 
         private readonly IUsuarioPermisoRepository _usuarioPermisoRepository;
 
         private readonly IConfiguration _configuration;
         protected RespuestaAPI _respuestaAPI;
 
-        public LoginController(IUsuarioRepository usuarioRepository,IUsuarioPermisoRepository usuarioPermisoRepository, IUsuarioRolRepository usuarioRolRepository,IRolRepository rolRepository, IPermisoRepository permisoRepository, IConfiguration configuration)
+        public LoginController(IUsuarioRepository usuarioRepository, IRolPermisoRepository rolPermisoRepository, IUsuarioPermisoRepository usuarioPermisoRepository, IUsuarioRolRepository usuarioRolRepository,IRolRepository rolRepository, IPermisoRepository permisoRepository, IConfiguration configuration)
         {
+            _rolpermisoRepository = rolPermisoRepository;
 
             _rolRepository = rolRepository;
             _permisoRepository = permisoRepository;
@@ -64,6 +67,7 @@ namespace GestionRepuestoAPI.Controllers
             var busquedaUsuarioPermisos = _usuarioPermisoRepository.ObtenerPermisosDeUsuario(usuario.id);
 
 
+            
             List<Rol> roles = new List<Rol>();
 
             foreach (var item in busquedaUsuarioRoles)
@@ -76,8 +80,36 @@ namespace GestionRepuestoAPI.Controllers
             }
 
             List<Permiso> permisos = new List<Permiso>();
+
+            
+            foreach (var item in busquedaUsuarioRoles)
+            {
+
+                var permiso = _rolpermisoRepository.ObtenerPermisosDelRol(item.idRol).ToList();
+
+                if (permiso != null)
+                {
+                    foreach (var p in permiso)
+                    {
+                        var permisoObtenido = _permisoRepository.ObtenerPermiso(p.idPermiso);
+                        if (permisoObtenido != null)
+                        {
+                            permisos.Add(permisoObtenido);
+                        }
+                    }
+                }
+
+
+            }
+
+
             foreach (var item in busquedaUsuarioPermisos)
             {
+
+                if (permisos.Any(p => p.id == item.idPermiso))
+                {
+                    continue; 
+                }
                 var permiso = _permisoRepository.ObtenerPermiso(item.idPermiso);
                 if (permiso != null)
                 {
@@ -181,10 +213,32 @@ namespace GestionRepuestoAPI.Controllers
                 .Where(r => r != null)
                 .ToList();
 
-            var permisosUsuario = _usuarioPermisoRepository.ObtenerPermisosDeUsuario(usuario.id)
+            List<Permiso> permisosUsuario = new List<Permiso>();
+
+            foreach (var rol in rolesUsuario)
+            {
+                var permisosDelRol = _rolpermisoRepository.ObtenerPermisosDelRol(rol.id);
+                foreach (var permiso in permisosDelRol)
+                {
+                    var permisoObtenido = _permisoRepository.ObtenerPermiso(permiso.idPermiso);
+                    if (permisoObtenido != null && !permisosUsuario.Any(p => p.id == permisoObtenido.id))
+                    {
+                        permisosUsuario.Add(permisoObtenido);
+                    }
+                }
+            }
+
+            var permisosAdicionales = _usuarioPermisoRepository.ObtenerPermisosDeUsuario(usuario.id)
                 .Select(p => _permisoRepository.ObtenerPermiso(p.idPermiso))
-                .Where(p => p != null)
+                .Where(p => p != null && !permisosUsuario.Any(up => up.id == p.id))
                 .ToList();
+
+
+            permisosUsuario.AddRange(permisosAdicionales);
+
+
+
+
 
             var respuesta = new LoginRespuestaDto
             {
@@ -243,8 +297,36 @@ namespace GestionRepuestoAPI.Controllers
             }
 
             List<Permiso> permisos = new List<Permiso>();
+
+
+            foreach (var item in busquedaUsuarioRoles)
+            {
+
+                var permiso = _rolpermisoRepository.ObtenerPermisosDelRol(item.idRol).ToList();
+
+                if (permiso != null)
+                {
+                    foreach (var p in permiso)
+                    {
+                        var permisoObtenido = _permisoRepository.ObtenerPermiso(p.idPermiso);
+                        if (permisoObtenido != null)
+                        {
+                            permisos.Add(permisoObtenido);
+                        }
+                    }
+                }
+
+
+            }
+
+
             foreach (var item in busquedaUsuarioPermisos)
             {
+
+                if (permisos.Any(p => p.id == item.idPermiso))
+                {
+                    continue;
+                }
                 var permiso = _permisoRepository.ObtenerPermiso(item.idPermiso);
                 if (permiso != null)
                 {
@@ -286,7 +368,7 @@ namespace GestionRepuestoAPI.Controllers
             var respuesta = new LoginRespuestaDto
             {
                 Token = tokenString,
-                RefreshToken = usuario.RefreshToken, // Se mantiene el mismo
+                RefreshToken = usuario.RefreshToken, 
                 Usuario = usuario.nombreUsuario,
                 Roles = roles,
                 Permisos = permisos

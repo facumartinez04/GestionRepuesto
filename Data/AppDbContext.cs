@@ -17,6 +17,9 @@ namespace GestionRepuestoAPI.Data
         public DbSet<UsuarioPermiso> UsuariosPermisos { get; set; }
 
         public DbSet<Permiso> Permisos { get; set; }
+        public DbSet<RolPermiso> RolesPermisos { get; set; }
+
+
 
         public DbSet<Rol> Roles { get; set; }
 
@@ -24,24 +27,38 @@ namespace GestionRepuestoAPI.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Configuración para UsuarioPermiso
             modelBuilder.Entity<UsuarioPermiso>()
                 .HasKey(up => new { up.idUsuario, up.idPermiso });
 
-            modelBuilder.Entity<UsuarioPermiso>()
-                .Property(up => up.idUsuario).HasColumnName("idUsuario");
 
             modelBuilder.Entity<UsuarioPermiso>()
-                .Property(up => up.idPermiso).HasColumnName("idPermiso");
+            .HasKey(up => new { up.idUsuario, up.idPermiso });
 
             modelBuilder.Entity<UsuarioRol>()
                 .HasKey(ur => new { ur.idUsuario, ur.idRol });
 
             modelBuilder.Entity<UsuarioRol>()
-                .Property(ur => ur.idUsuario).HasColumnName("idUsuario");
+                .HasKey(ur => new { ur.idUsuario, ur.idRol });
+
+
+            modelBuilder.Entity<RolPermiso>()
+              .HasKey(ur => new { ur.idRol, ur.idPermiso });
+
+            modelBuilder.Entity<RolPermiso>()
+                .HasKey(ur => new { ur.idRol, ur.idPermiso });
 
             modelBuilder.Entity<UsuarioRol>()
-                .Property(ur => ur.idRol).HasColumnName("idRol");
+                .HasOne(ur => ur.usuario)
+                .WithMany()
+                .HasForeignKey(ur => ur.idUsuario)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<UsuarioRol>()
+                .HasOne(ur => ur.rol)
+                .WithMany()
+                .HasForeignKey(ur => ur.idRol)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
     }

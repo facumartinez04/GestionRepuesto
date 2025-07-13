@@ -7,6 +7,8 @@ namespace GestionRepuestoAPI.Repository.Interfaces
         ICollection<UsuarioRol> ObtenerRolesDeUsuario(int usuarioId);
         bool AsignarRol(int usuarioId, int rolId);
         bool RemoverRol(int usuarioId, int rolId);
+
+        void RemoverTodosLosRoles(int usuarioId);
         bool GuardarCambios();
     }
 }

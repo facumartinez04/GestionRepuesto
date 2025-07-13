@@ -15,12 +15,15 @@ namespace GestionRepuestoAPI.Repository
 
         public bool CrearRol(Rol rol)
         {
+            if (rol == null) return false;
             _db.Roles.Add(rol);
-            return GuardarCambios();
+            GuardarCambios();
+            return true;
         }
 
         public bool ActualizarRol(Rol rol)
         {
+            if (rol == null) return false;
             _db.Roles.Update(rol);
             return GuardarCambios();
         }
@@ -30,7 +33,10 @@ namespace GestionRepuestoAPI.Repository
             var rol = ObtenerRol(id);
             if (rol == null) return false;
             _db.Roles.Remove(rol);
-            return GuardarCambios();
+            GuardarCambios();
+            return true;
+
+
         }
 
         public Rol ObtenerRol(int id)
